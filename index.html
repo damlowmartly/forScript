@@ -10,14 +10,12 @@ body {
     background:#f4f4f4;
     padding-bottom:80px;
 }
-
 .grid {
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
     gap:15px;
     padding:20px;
 }
-
 .note, .script {
     background:white;
     border-radius:10px;
@@ -33,11 +31,7 @@ body {
     transition: transform 0.2s;
     position:relative;
 }
-
-.note:hover, .script:hover {
-    transform:scale(1.03);
-}
-
+.note:hover, .script:hover {transform:scale(1.03);}
 .delete-btn {
     position:absolute;
     top:6px;
@@ -52,7 +46,6 @@ body {
     cursor:pointer;
     line-height:20px;
 }
-
 .create-btn {
     position:fixed;
     bottom:20px;
@@ -66,7 +59,6 @@ body {
     color:white;
     cursor:pointer;
 }
-
 .modal {
     position:fixed;
     inset:0;
@@ -76,91 +68,78 @@ body {
     justify-content:center;
     z-index:10;
 }
-
 .modal-content {
     background:white;
     padding:20px;
     border-radius:10px;
     width:90%;
-    height:90vh; /* 90% of screen height */
+    height:90vh;
     display:flex;
     gap:10px;
 }
-
-/* LEFT PANEL FOR INPUTS */
 .modal-left {
-    width:20%; /* 20% for note input */
+    width:20%;
     display:flex;
     flex-direction:column;
     gap:10px;
 }
-
 .modal-left input, 
 .modal-left textarea {
     padding:15px;
-    font-size:16px; /* larger input size */
+    font-size:16px;
     width:100%;
-    height:100px;
     border-radius:8px;
     border:1px solid #ccc;
     resize:none;
 }
-
-/* RIGHT PANEL FOR IMAGE */
 .modal-right {
-    width:80%; /* 80% for image preview */
+    width:80%;
     display:flex;
     align-items:center;
     justify-content:center;
     background:#f0f0f0;
     border-radius:8px;
 }
-
 .modal-right img {
     max-width:100%;
     max-height:100%;
     object-fit:cover;
     border-radius:8px;
 }
-
-/* VIEW NOTE PANEL */
 .view-panel {
     background:white;
-    width:90%;
-    max-width:1000px;
-    height:80vh;
+    width:90vw;
+    height:90vh;
     border-radius:12px;
     overflow:hidden;
     display:grid;
     grid-template-columns:20% 80%;
 }
-
 .view-notes {
-    padding:25px;
+    padding:30px;
     overflow-y:auto;
 }
-
 .view-title {
-    font-size:22px;
+    font-size:28px;
     font-weight:bold;
-    margin-bottom:15px;
+    margin-bottom:20px;
 }
-
 .notes-text {
     white-space:pre-wrap;
-    line-height:1.6;
+    line-height:1.8;
+    font-size:18px;
 }
-
 .view-image {
     background:#000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
 }
-
 .view-image img {
     width:100%;
     height:100%;
     object-fit:cover;
 }
-
 .script-panel {
     background:white;
     width:90%;
@@ -171,14 +150,12 @@ body {
     display:flex;
     flex-direction:column;
 }
-
 .script-inputs input {
     margin-bottom:6px;
     width:100%;
     padding:12px;
     font-size:16px;
 }
-
 .result {
     background:#f1f1f1;
     padding:15px;
@@ -187,7 +164,6 @@ body {
     margin-top:10px;
     flex:1;
 }
-
 .close-btn {
     position:absolute;
     top:15px;
@@ -243,6 +219,8 @@ body {
     <div class="modal-content" style="flex-direction:column;">
         <input type="text" id="scriptTitleInput" placeholder="Script title">
         <textarea id="scriptContentInput" rows="6" placeholder="Use placeholders like 1& 2&"></textarea>
+        <div id="dynamicScriptInputs" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>
+        <div id="scriptLiveResult" style="background:#f1f1f1; padding:10px; border-radius:8px; margin-top:10px; flex:1; white-space:pre-wrap;"></div>
         <button class="save-btn" onclick="saveScript()">Save Script</button>
     </div>
 </div>
@@ -259,7 +237,6 @@ body {
 
 <script>
 const grid = document.getElementById("grid");
-
 let notes = JSON.parse(localStorage.getItem("notes"))||[];
 let scripts = JSON.parse(localStorage.getItem("scripts"))||[];
 let activeScriptIndex = null;
@@ -308,9 +285,7 @@ function saveNote(){
 
     if(imageInput.files[0]){
         const reader=new FileReader();
-        reader.onload=()=>{
-            pushNote(reader.result);
-        }
+        reader.onload=()=>{pushNote(reader.result);}
         reader.readAsDataURL(imageInput.files[0]);
     }else pushNote(null);
 
@@ -325,14 +300,12 @@ function saveNote(){
     }
 }
 
-// IMAGE PREVIEW IN CREATE NOTE MODAL
+// IMAGE PREVIEW
 document.getElementById("noteImageInput").addEventListener("change", function(){
     const file = this.files[0];
     if(file){
         const reader = new FileReader();
-        reader.onload = e => {
-            document.getElementById("notePreview").src = e.target.result;
-        }
+        reader.onload = e => { document.getElementById("notePreview").src = e.target.result; }
         reader.readAsDataURL(file);
     }
 });
@@ -346,62 +319,102 @@ function openViewNote(index){
     document.getElementById("viewNoteModal").style.display="flex";
 }
 
+// SCRIPT DYNAMIC LOGIC
+const scriptContentInput = document.getElementById("scriptContentInput");
+const dynamicInputsDiv = document.getElementById("dynamicScriptInputs");
+const scriptLiveResult = document.getElementById("scriptLiveResult");
+let currentScriptValues = {};
+
+function updateLiveScript(template, values) {
+    let out = template;
+    Object.keys(values).forEach(k=>{ out = out.replaceAll(`${k}&`, values[k]); });
+    scriptLiveResult.innerText = out;
+}
+
+function generateDynamicInputs(template, savedValues={}) {
+    dynamicInputsDiv.innerHTML = "";
+    currentScriptValues = {...savedValues};
+
+    const matches = [...template.matchAll(/\b([1-9]|10)&/g)]
+        .map(m=>m[1])
+        .filter((v,i,a)=>a.indexOf(v)===i);
+
+    matches.forEach(n=>{
+        const input = document.createElement("input");
+        input.placeholder = `${n}&`;
+        input.style.padding = "10px";
+        input.style.fontSize = "16px";
+        input.value = currentScriptValues[n] || "";
+        input.oninput = ()=>{currentScriptValues[n] = input.value; updateLiveScript(template,currentScriptValues);}
+        dynamicInputsDiv.appendChild(input);
+    });
+    updateLiveScript(template, currentScriptValues);
+}
+
+scriptContentInput.addEventListener("input", ()=>{
+    generateDynamicInputs(scriptContentInput.value);
+});
+
 // SAVE SCRIPT
 function saveScript(){
-    const title=document.getElementById("scriptTitleInput").value.trim();
-    const content=document.getElementById("scriptContentInput").value.trim();
-    if(!title || !content) return;
-    scripts.push({title,template:content,values:{}});
+    const title = document.getElementById("scriptTitleInput").value.trim();
+    const template = scriptContentInput.value.trim();
+    if(!title || !template) return;
+    scripts.push({
+        title,
+        template,
+        values: {...currentScriptValues}
+    });
     localStorage.setItem("scripts",JSON.stringify(scripts));
     document.getElementById("scriptTitleInput").value="";
-    document.getElementById("scriptContentInput").value="";
-    closeAll();renderGrid();
+    scriptContentInput.value="";
+    dynamicInputsDiv.innerHTML="";
+    scriptLiveResult.innerText="";
+    closeAll();
+    renderGrid();
 }
 
 // VIEW SCRIPT
 function openViewScript(index){
-    activeScriptIndex=index;
-    const script=scripts[index];
-    const inputsDiv=document.getElementById("scriptInputs");
-    const resultDiv=document.getElementById("scriptResult");
+    activeScriptIndex = index;
+    const script = scripts[index];
+    const inputsDiv = document.getElementById("scriptInputs");
+    const resultDiv = document.getElementById("scriptResult");
     inputsDiv.innerHTML="";
-    let values=script.values||{};
-    const matches=[...script.template.matchAll(/\b([1-9]|10)&/g)].map(m=>m[1]).filter((v,i,a)=>a.indexOf(v)===i);
+    const values = script.values || {};
+    const matches = [...script.template.matchAll(/\b([1-9]|10)&/g)]
+        .map(m=>m[1])
+        .filter((v,i,a)=>a.indexOf(v)===i);
     matches.forEach(n=>{
-        const input=document.createElement("input");
-        input.placeholder=`Value for ${n}&`;
-        input.value=values[n]||"";
-        input.oninput=()=>{values[n]=input.value;updateScriptResult(script.template,values);}
+        const input = document.createElement("input");
+        input.placeholder = `${n}&`;
+        input.value = values[n] || "";
+        input.oninput = ()=>{values[n] = input.value; updateScriptResult(script.template, values);}
         inputsDiv.appendChild(input);
     });
-    updateScriptResult(script.template,values);
+    updateScriptResult(script.template, values);
     document.getElementById("viewScriptModal").style.display="flex";
 }
 
-// UPDATE SCRIPT RESULT
-function updateScriptResult(template,values){
-    let out=template;
-    Object.keys(values).forEach(k=>{out=out.replaceAll(`${k}&`,values[k]);});
-    document.getElementById("scriptResult").innerText=out;
+function updateScriptResult(template, values){
+    let out = template;
+    Object.keys(values).forEach(k=>{ out = out.replaceAll(`${k}&`, values[k]); });
+    document.getElementById("scriptResult").innerText = out;
 }
 
-// SAVE SCRIPT VALUES
 function saveScriptValues(){
     if(activeScriptIndex===null) return;
-    const script=scripts[activeScriptIndex];
-    const inputs=document.querySelectorAll("#scriptInputs input");
-    const values={};
-    inputs.forEach(input=>{const k=input.placeholder.match(/\d+/)[0];values[k]=input.value;});
-    script.values=values;
+    const script = scripts[activeScriptIndex];
+    const inputs = document.querySelectorAll("#scriptInputs input");
+    const values = {};
+    inputs.forEach(input=>{ const k = input.placeholder.match(/\d+/)[0]; values[k] = input.value; });
+    script.values = values;
     localStorage.setItem("scripts",JSON.stringify(scripts));
     alert("Values saved!");
 }
 
-// CLOSE MODAL BY CLICK OUTSIDE
-window.onclick=e=>{
-    if(e.target.classList.contains("modal")) closeAll();
-}
+// CLOSE MODAL ON CLICK OUTSIDE
+window.onclick = e=>{ if(e.target.classList.contains("modal")) closeAll(); }
 </script>
-
 </body>
 </html>
