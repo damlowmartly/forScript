@@ -32,6 +32,7 @@
         min-height: 120px;
         word-break: break-word;
         transition: transform 0.2s;
+        font-weight: bold;
     }
 
     .note:hover {
@@ -59,16 +60,19 @@
         display: none;
         align-items: center;
         justify-content: center;
+        z-index: 10;
     }
 
     .modal-content {
         background: white;
         padding: 20px;
         border-radius: 10px;
-        width: 300px;
+        width: 320px;
         display: flex;
         flex-direction: column;
         gap: 10px;
+        max-height: 90vh;
+        overflow-y: auto;
     }
 
     input, textarea {
@@ -85,25 +89,56 @@
         cursor: pointer;
         border-radius: 5px;
     }
+
+    .view-title {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .view-img {
+        max-width: 100%;
+        border-radius: 8px;
+    }
+
+    .close-btn {
+        background: #aaa;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 5px;
+    }
 </style>
 </head>
 <body>
 
 <div class="grid" id="grid"></div>
 
-<button class="create-btn" onclick="openModal()">Create</button>
+<button class="create-btn" onclick="openCreate()">Create</button>
 
-<div class="modal" id="modal">
+<!-- Create Modal -->
+<div class="modal" id="createModal">
     <div class="modal-content">
         <input type="text" id="title" placeholder="Title">
         <textarea id="content" rows="5" placeholder="Notes"></textarea>
+        <input type="file" id="image" accept="image/*">
         <button class="save-btn" onclick="saveNote()">Save</button>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal" id="viewModal">
+    <div class="modal-content">
+        <div class="view-title" id="viewTitle"></div>
+        <img id="viewImage" class="view-img" style="display:none">
+        <div id="viewContent"></div>
+        <button class="close-btn" onclick="closeView()">Close</button>
     </div>
 </div>
 
 <script>
     const grid = document.getElementById("grid");
-    const modal = document.getElementById("modal");
+    const createModal = document.getElementById("createModal");
+    const viewModal = document.getElementById("viewModal");
 
     let notes = JSON.parse(localStorage.getItem("notes")) || [];
 
@@ -113,34 +148,68 @@
             const div = document.createElement("div");
             div.className = "note";
             div.innerText = note.title;
-            div.onclick = () => alert(note.content);
+            div.onclick = () => openView(index);
             grid.appendChild(div);
         });
     }
 
-    function openModal() {
-        modal.style.display = "flex";
+    function openCreate() {
+        createModal.style.display = "flex";
     }
 
-    modal.onclick = e => {
-        if (e.target === modal) modal.style.display = "none";
-    };
+    function openView(index) {
+        const note = notes[index];
+        document.getElementById("viewTitle").innerText = note.title;
+        document.getElementById("viewContent").innerText = note.content;
+
+        const img = document.getElementById("viewImage");
+        if (note.image) {
+            img.src = note.image;
+            img.style.display = "block";
+        } else {
+            img.style.display = "none";
+        }
+
+        viewModal.style.display = "flex";
+    }
+
+    function closeView() {
+        viewModal.style.display = "none";
+    }
 
     function saveNote() {
         const title = document.getElementById("title").value.trim();
         const content = document.getElementById("content").value.trim();
+        const imageInput = document.getElementById("image");
 
         if (!title || !content) return;
 
-        notes.push({ title, content });
-        localStorage.setItem("notes", JSON.stringify(notes));
+        if (imageInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                notes.push({ title, content, image: reader.result });
+                finishSave();
+            };
+            reader.readAsDataURL(imageInput.files[0]);
+        } else {
+            notes.push({ title, content, image: null });
+            finishSave();
+        }
+    }
 
+    function finishSave() {
+        localStorage.setItem("notes", JSON.stringify(notes));
         document.getElementById("title").value = "";
         document.getElementById("content").value = "";
-        modal.style.display = "none";
-
+        document.getElementById("image").value = "";
+        createModal.style.display = "none";
         renderNotes();
     }
+
+    window.onclick = e => {
+        if (e.target === createModal) createModal.style.display = "none";
+        if (e.target === viewModal) viewModal.style.display = "none";
+    };
 
     renderNotes();
 </script>
