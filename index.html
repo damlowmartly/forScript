@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Notes Grid</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
+        padding-bottom: 80px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 15px;
+        padding: 20px;
+    }
+
+    .note {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: 120px;
+        word-break: break-word;
+        transition: transform 0.2s;
+    }
+
+    .note:hover {
+        transform: scale(1.03);
+    }
+
+    .create-btn {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 15px 30px;
+        font-size: 16px;
+        border: none;
+        border-radius: 30px;
+        background: #333;
+        color: white;
+        cursor: pointer;
+    }
+
+    .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    input, textarea {
+        padding: 10px;
+        font-size: 14px;
+        width: 100%;
+    }
+
+    .save-btn {
+        background: #333;
+        color: white;
+        border: none;
+        padding: 10px;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+</style>
+</head>
+<body>
+
+<div class="grid" id="grid"></div>
+
+<button class="create-btn" onclick="openModal()">Create</button>
+
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <input type="text" id="title" placeholder="Title">
+        <textarea id="content" rows="5" placeholder="Notes"></textarea>
+        <button class="save-btn" onclick="saveNote()">Save</button>
+    </div>
+</div>
+
+<script>
+    const grid = document.getElementById("grid");
+    const modal = document.getElementById("modal");
+
+    let notes = JSON.parse(localStorage.getItem("notes")) || [];
+
+    function renderNotes() {
+        grid.innerHTML = "";
+        notes.forEach((note, index) => {
+            const div = document.createElement("div");
+            div.className = "note";
+            div.innerText = note.title;
+            div.onclick = () => alert(note.content);
+            grid.appendChild(div);
+        });
+    }
+
+    function openModal() {
+        modal.style.display = "flex";
+    }
+
+    modal.onclick = e => {
+        if (e.target === modal) modal.style.display = "none";
+    };
+
+    function saveNote() {
+        const title = document.getElementById("title").value.trim();
+        const content = document.getElementById("content").value.trim();
+
+        if (!title || !content) return;
+
+        notes.push({ title, content });
+        localStorage.setItem("notes", JSON.stringify(notes));
+
+        document.getElementById("title").value = "";
+        document.getElementById("content").value = "";
+        modal.style.display = "none";
+
+        renderNotes();
+    }
+
+    renderNotes();
+</script>
+
+</body>
+</html>
