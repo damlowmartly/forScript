@@ -6,15 +6,21 @@
 <style>
 body {margin:0;font-family:Arial,sans-serif;background:#f4f4f4;padding-bottom:100px;}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:15px;padding:20px;}
-.card{background:white;border-radius:10px;padding:15px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;text-align:center;min-height:120px;font-weight:bold;position:relative;}
+.card{background:white;border-radius:10px;padding:15px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;text-align:center;min-height:120px;font-weight:bold;position:relative;overflow:hidden;}
 .delete-btn{position:absolute;top:6px;right:8px;background:#ff4d4d;color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:14px;cursor:pointer;line-height:20px;}
 .btn-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;}
 button{padding:12px 22px;border-radius:30px;border:none;background:#333;color:white;cursor:pointer;}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:10;}
-.panel{width:90vw;height:90vh;background:white;border-radius:12px;padding:20px;overflow:auto;position:relative;}
+.panel{width:90vw;height:90vh;background:white;border-radius:12px;padding:20px;overflow:auto;position:relative;display:flex;}
 .close{position:absolute;top:12px;right:15px;cursor:pointer;font-size:20px;}
-input,textarea{width:100%;padding:10px;margin-bottom:10px;}
-.result{background:#f1f1f1;padding:15px;border-radius:8px;white-space:pre-wrap;margin-top:10px;}
+input,textarea{padding:10px;margin-bottom:10px;}
+input[type=file]{padding:3px;}
+.note-left{width:20%;margin-right:10px;display:flex;flex-direction:column;}
+.note-left textarea{flex:1;}
+.note-right{width:80%;display:flex;align-items:center;justify-content:center;}
+.note-right img{max-width:100%;max-height:100%;border-radius:8px;object-fit:cover;}
+.script-inputs input{margin-bottom:6px;width:100%;}
+.result{background:#f1f1f1;padding:15px;border-radius:8px;white-space:pre-wrap;margin-top:10px;flex:1;}
 </style>
 </head>
 <body>
@@ -26,19 +32,25 @@ input,textarea{width:100%;padding:10px;margin-bottom:10px;}
 <button onclick="openScript()">CreateScript</button>
 </div>
 
-<!-- CREATE NOTE -->
+<!-- CREATE NOTE (with image) -->
 <div class="modal" id="noteModal">
 <div class="panel">
 <span class="close" onclick="closeAll()">✕</span>
+<div class="note-left">
 <input id="noteTitle" placeholder="Note title">
 <textarea id="noteText" rows="6" placeholder="Write your note"></textarea>
+<input type="file" id="noteImage" accept="image/*">
 <button onclick="saveNote()">Save</button>
+</div>
+<div class="note-right">
+<img id="notePreview" src="" alt="" />
+</div>
 </div>
 </div>
 
 <!-- CREATE SCRIPT -->
 <div class="modal" id="scriptModal">
-<div class="panel">
+<div class="panel" style="flex-direction:column;">
 <span class="close" onclick="closeAll()">✕</span>
 <input id="scriptTitle" placeholder="Script title">
 <textarea id="scriptText" rows="8" placeholder="Use placeholders like 1& 2& 3&"></textarea>
@@ -48,32 +60,40 @@ input,textarea{width:100%;padding:10px;margin-bottom:10px;}
 
 <!-- VIEW SCRIPT -->
 <div class="modal" id="viewScriptModal">
-<div class="panel">
+<div class="panel" style="flex-direction:column;">
 <span class="close" onclick="closeAll()">✕</span>
-<div id="scriptInputs"></div>
+<div class="script-inputs" id="scriptInputs"></div>
 <button onclick="saveValues()">Save Values</button>
 <div class="result" id="scriptResult"></div>
 </div>
 </div>
 
 <script>
-const grid = document.getElementById("grid");
-let items = JSON.parse(localStorage.getItem("items"))||[];
-let activeScriptIndex = null;
+const grid=document.getElementById("grid");
+let items=JSON.parse(localStorage.getItem("items"))||[];
+let activeScriptIndex=null;
 
-function render() {
-grid.innerHTML = "";
+// PREVIEW IMAGE
+const notePreview=document.getElementById("notePreview");
+document.getElementById("noteImage").addEventListener("change",function(e){
+if(this.files && this.files[0]){
+const reader=new FileReader();
+reader.onload=function(ev){notePreview.src=ev.target.result;}
+reader.readAsDataURL(this.files[0]);
+}
+});
+
+// RENDER GRID
+function render(){
+grid.innerHTML="";
 items.forEach((item,i)=>{
 const div=document.createElement("div");
 div.className="card";
 div.innerText=item.title;
-
-// open
 div.onclick=()=>{
 if(item.type==="script") openScriptView(i);
-else alert(item.text);
+else openNoteView(i);
 };
-
 // delete
 const del=document.createElement("button");
 del.className="delete-btn";
@@ -92,17 +112,39 @@ grid.appendChild(div);
 }
 render();
 
+// MODALS
 function openNote(){noteModal.style.display="flex";}
 function openScript(){scriptModal.style.display="flex";}
 function closeAll(){document.querySelectorAll(".modal").forEach(m=>m.style.display="none");}
 
+// SAVE NOTE WITH IMAGE
 function saveNote(){
-if(!noteTitle.value||!noteText.value)return;
-items.push({type:"note",title:noteTitle.value,text:noteText.value});
+const fileInput=document.getElementById("noteImage");
+let imgData="";
+if(fileInput.files && fileInput.files[0]){
+const reader=new FileReader();
+reader.onload=function(ev){
+imgData=ev.target.result;
+pushNote(imgData);
+};
+reader.readAsDataURL(fileInput.files[0]);
+}else pushNote("");
+function pushNote(img){
+items.push({type:"note",title:noteTitle.value,text:noteText.value,image:img});
 localStorage.setItem("items",JSON.stringify(items));
 closeAll();render();
+notePreview.src="";
+noteTitle.value="";noteText.value="";fileInput.value="";
+}
 }
 
+// VIEW NOTE
+function openNoteView(index){
+const note=items[index];
+alert(note.title+"\n\n"+note.text); // simple alert, can expand later
+}
+
+// SAVE SCRIPT
 function saveScript(){
 if(!scriptTitle.value||!scriptText.value)return;
 items.push({type:"script",title:scriptTitle.value,template:scriptText.value,values:{}});
@@ -110,17 +152,15 @@ localStorage.setItem("items",JSON.stringify(items));
 closeAll();render();
 }
 
+// VIEW SCRIPT
 function openScriptView(index){
 activeScriptIndex=index;
 const script=items[index];
 const inputsDiv=document.getElementById("scriptInputs");
 const resultDiv=document.getElementById("scriptResult");
-
 inputsDiv.innerHTML="";
 let values=script.values||{};
-
 const matches=[...script.template.matchAll(/\b([1-9]|10)&/g)].map(m=>m[1]).filter((v,i,a)=>a.indexOf(v)===i);
-
 matches.forEach(n=>{
 const input=document.createElement("input");
 input.placeholder=`Value for ${n}&`;
@@ -131,21 +171,18 @@ updateResult(script.template,values);
 };
 inputsDiv.appendChild(input);
 });
-
-// update preview immediately
 updateResult(script.template,values);
 viewScriptModal.style.display="flex";
 }
 
+// UPDATE PREVIEW
 function updateResult(template,values){
 let output=template;
-Object.keys(values).forEach(k=>{
-output=output.replaceAll(`${k}&`,values[k]);
-});
-scriptResult.innerText=output;
+Object.keys(values).forEach(k=>{output=output.replaceAll(`${k}&`,values[k]);});
+document.getElementById("scriptResult").innerText=output;
 }
 
-// SAVE values persistently, but still editable later
+// SAVE VALUES PERSISTENTLY
 function saveValues(){
 if(activeScriptIndex===null)return;
 const script=items[activeScriptIndex];
@@ -160,6 +197,5 @@ localStorage.setItem("items",JSON.stringify(items));
 alert("Values saved! ✅ They will auto-fill next time.");
 }
 </script>
-
 </body>
 </html>
