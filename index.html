@@ -4,21 +4,24 @@
 <meta charset="UTF-8">
 <title>Notes & Scripts</title>
 <style>
-body {margin:0;font-family:Arial,sans-serif;background:#f4f4f4;padding-bottom:100px;}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:15px;padding:20px;}
-.card{background:white;border-radius:10px;padding:15px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;text-align:center;min-height:120px;font-weight:bold;position:relative;overflow:hidden;}
+body {margin:0;font-family:Arial,sans-serif;background:#f4f4f4;padding-bottom:80px;}
+.grid {display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:15px;padding:20px;}
+.note, .script {background:white;border-radius:10px;padding:15px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;text-align:center;min-height:120px;font-weight:bold;transition: transform 0.2s;position:relative;}
+.note:hover, .script:hover {transform:scale(1.03);}
 .delete-btn{position:absolute;top:6px;right:8px;background:#ff4d4d;color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:14px;cursor:pointer;line-height:20px;}
-.btn-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;}
-button{padding:12px 22px;border-radius:30px;border:none;background:#333;color:white;cursor:pointer;}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:10;}
-.panel{width:90vw;height:90vh;background:white;border-radius:12px;padding:20px;overflow:auto;position:relative;display:flex;}
-.close{position:absolute;top:12px;right:15px;cursor:pointer;font-size:20px;}
-input,textarea{padding:10px;margin-bottom:10px;}
-input[type=file]{padding:3px;}
-.note-left{width:20%;margin-right:10px;display:flex;flex-direction:column;}
-.note-left textarea{flex:1;}
-.note-right{width:80%;display:flex;align-items:center;justify-content:center;}
-.note-right img{max-width:100%;max-height:100%;border-radius:8px;object-fit:cover;}
+.create-btn {position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:15px 30px;font-size:16px;border:none;border-radius:30px;background:#333;color:white;cursor:pointer;}
+.modal {position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:10;}
+.modal-content {background:white;padding:20px;border-radius:10px;width:320px;display:flex;flex-direction:column;gap:10px;}
+input,textarea {padding:10px;font-size:14px;width:100%;}
+.save-btn {background:#333;color:white;border:none;padding:10px;cursor:pointer;border-radius:5px;}
+.close-btn {position:absolute;top:15px;right:15px;background:rgba(0,0,0,0.6);color:white;border:none;padding:8px 12px;cursor:pointer;border-radius:20px;z-index:20;}
+.view-panel {background:white;width:90%;max-width:1000px;height:80vh;border-radius:12px;overflow:hidden;display:grid;grid-template-columns:1fr 1.4fr;}
+.view-notes {padding:25px;overflow-y:auto;}
+.view-title {font-size:22px;font-weight:bold;margin-bottom:15px;}
+.notes-text {white-space:pre-wrap;line-height:1.6;}
+.view-image {background:#000;}
+.view-image img {width:100%;height:100%;object-fit:cover;}
+.script-panel {background:white;width:90%;max-width:600px;height:80vh;border-radius:12px;padding:20px;display:flex;flex-direction:column;}
 .script-inputs input{margin-bottom:6px;width:100%;}
 .result{background:#f1f1f1;padding:15px;border-radius:8px;white-space:pre-wrap;margin-top:10px;flex:1;}
 </style>
@@ -27,192 +30,182 @@ input[type=file]{padding:3px;}
 
 <div class="grid" id="grid"></div>
 
-<div class="btn-bar">
-<button onclick="openNote()">Create</button>
-<button onclick="openScript()">CreateScript</button>
+<button class="create-btn" onclick="openCreateNote()">Create</button>
+<button class="create-btn" style="left:65%" onclick="openCreateScript()">CreateScript</button>
+
+<!-- Create Note Modal -->
+<div class="modal" id="createNoteModal">
+    <div class="modal-content">
+        <input type="text" id="noteTitleInput" placeholder="Title">
+        <textarea id="noteContentInput" rows="5" placeholder="Notes"></textarea>
+        <input type="file" id="noteImageInput" accept="image/*">
+        <button class="save-btn" onclick="saveNote()">Save</button>
+    </div>
 </div>
 
-<!-- CREATE NOTE -->
-<div class="modal" id="noteModal">
-<div class="panel">
-<span class="close" onclick="closeAll()">✕</span>
-<div class="note-left">
-<input id="noteTitle" placeholder="Note title">
-<textarea id="noteText" rows="6" placeholder="Write your note"></textarea>
-<input type="file" id="noteImage" accept="image/*">
-<button onclick="saveNote()">Save</button>
-</div>
-<div class="note-right">
-<img id="notePreview" src="" alt="" />
-</div>
-</div>
-</div>
-
-<!-- VIEW NOTE -->
+<!-- View Note Modal -->
 <div class="modal" id="viewNoteModal">
-<div class="panel">
-<span class="close" onclick="closeAll()">✕</span>
-<div class="note-left">
-<h2 id="viewNoteTitle"></h2>
-<textarea id="viewNoteText" rows="6" readonly></textarea>
-</div>
-<div class="note-right">
-<img id="viewNoteImage" src="" alt="" />
-</div>
-</div>
-</div>
-
-<!-- CREATE SCRIPT -->
-<div class="modal" id="scriptModal">
-<div class="panel" style="flex-direction:column;">
-<span class="close" onclick="closeAll()">✕</span>
-<input id="scriptTitle" placeholder="Script title">
-<textarea id="scriptText" rows="8" placeholder="Use placeholders like 1& 2& 3&"></textarea>
-<button onclick="saveScript()">Save Script</button>
-</div>
+    <button class="close-btn" onclick="closeAll()">✕</button>
+    <div class="view-panel">
+        <div class="view-notes">
+            <div class="view-title" id="viewNoteTitle"></div>
+            <div class="notes-text" id="viewNoteContent"></div>
+        </div>
+        <div class="view-image">
+            <img id="viewNoteImage">
+        </div>
+    </div>
 </div>
 
-<!-- VIEW SCRIPT -->
+<!-- Create Script Modal -->
+<div class="modal" id="createScriptModal">
+    <div class="modal-content">
+        <input type="text" id="scriptTitleInput" placeholder="Script title">
+        <textarea id="scriptContentInput" rows="6" placeholder="Use placeholders like 1& 2&"></textarea>
+        <button class="save-btn" onclick="saveScript()">Save Script</button>
+    </div>
+</div>
+
+<!-- View Script Modal -->
 <div class="modal" id="viewScriptModal">
-<div class="panel" style="flex-direction:column;">
-<span class="close" onclick="closeAll()">✕</span>
-<div class="script-inputs" id="scriptInputs"></div>
-<button onclick="saveValues()">Save Values</button>
-<div class="result" id="scriptResult"></div>
-</div>
+    <button class="close-btn" onclick="closeAll()">✕</button>
+    <div class="script-panel">
+        <div class="script-inputs" id="scriptInputs"></div>
+        <button class="save-btn" onclick="saveScriptValues()">Save Values</button>
+        <div class="result" id="scriptResult"></div>
+    </div>
 </div>
 
 <script>
-const grid=document.getElementById("grid");
-let items=JSON.parse(localStorage.getItem("items"))||[];
-let activeScriptIndex=null;
+const grid = document.getElementById("grid");
 
-// PREVIEW IMAGE
-const notePreview=document.getElementById("notePreview");
-document.getElementById("noteImage").addEventListener("change",function(e){
-if(this.files && this.files[0]){
-const reader=new FileReader();
-reader.onload=function(ev){notePreview.src=ev.target.result;}
-reader.readAsDataURL(this.files[0]);
-}
-});
+let notes = JSON.parse(localStorage.getItem("notes"))||[];
+let scripts = JSON.parse(localStorage.getItem("scripts"))||[];
+let activeScriptIndex = null;
 
 // RENDER GRID
-function render(){
-grid.innerHTML="";
-items.forEach((item,i)=>{
-const div=document.createElement("div");
-div.className="card";
-div.innerText=item.title;
-div.onclick=()=>{
-if(item.type==="script") openScriptView(i);
-else openNoteView(i);
-};
-// delete
-const del=document.createElement("button");
-del.className="delete-btn";
-del.innerText="✕";
-del.onclick=e=>{
-e.stopPropagation();
-if(confirm("Delete this item?")){
-items.splice(i,1);
-localStorage.setItem("items",JSON.stringify(items));
-render();
+function renderGrid() {
+    grid.innerHTML = "";
+    notes.forEach((note,i)=>{
+        const div = document.createElement("div");
+        div.className="note";
+        div.innerText=note.title;
+        const del=document.createElement("button");
+        del.className="delete-btn";
+        del.innerText="✕";
+        del.onclick=e=>{e.stopPropagation();notes.splice(i,1);localStorage.setItem("notes",JSON.stringify(notes));renderGrid();}
+        div.appendChild(del);
+        div.onclick=()=>openViewNote(i);
+        grid.appendChild(div);
+    });
+    scripts.forEach((script,i)=>{
+        const div=document.createElement("div");
+        div.className="script";
+        div.innerText=script.title;
+        const del=document.createElement("button");
+        del.className="delete-btn";
+        del.innerText="✕";
+        del.onclick=e=>{e.stopPropagation();scripts.splice(i,1);localStorage.setItem("scripts",JSON.stringify(scripts));renderGrid();}
+        div.appendChild(del);
+        div.onclick=()=>openViewScript(i);
+        grid.appendChild(div);
+    });
 }
-};
-div.appendChild(del);
-grid.appendChild(div);
-});
-}
-render();
+renderGrid();
 
-// MODALS
-function openNote(){noteModal.style.display="flex";}
-function openScript(){scriptModal.style.display="flex";}
+// OPEN/CLOSE MODALS
+function openCreateNote(){document.getElementById("createNoteModal").style.display="flex";}
+function openCreateScript(){document.getElementById("createScriptModal").style.display="flex";}
 function closeAll(){document.querySelectorAll(".modal").forEach(m=>m.style.display="none");}
 
-// SAVE NOTE WITH IMAGE
+// SAVE NOTE
 function saveNote(){
-const fileInput=document.getElementById("noteImage");
-let imgData="";
-if(fileInput.files && fileInput.files[0]){
-const reader=new FileReader();
-reader.onload=function(ev){
-imgData=ev.target.result;
-pushNote(imgData);
-};
-reader.readAsDataURL(fileInput.files[0]);
-}else pushNote("");
-function pushNote(img){
-items.push({type:"note",title:noteTitle.value,text:noteText.value,image:img});
-localStorage.setItem("items",JSON.stringify(items));
-closeAll();render();
-notePreview.src="";
-noteTitle.value="";noteText.value="";fileInput.value="";
-}
+    const title = document.getElementById("noteTitleInput").value.trim();
+    const content = document.getElementById("noteContentInput").value.trim();
+    const imageInput=document.getElementById("noteImageInput");
+    if(!title || !content) return;
+
+    if(imageInput.files[0]){
+        const reader=new FileReader();
+        reader.onload=()=>{pushNote(reader.result);}
+        reader.readAsDataURL(imageInput.files[0]);
+    }else pushNote(null);
+
+    function pushNote(img){
+        notes.push({title,content,image:img});
+        localStorage.setItem("notes",JSON.stringify(notes));
+        document.getElementById("noteTitleInput").value="";
+        document.getElementById("noteContentInput").value="";
+        document.getElementById("noteImageInput").value="";
+        closeAll(); renderGrid();
+    }
 }
 
-// VIEW NOTE (modal layout)
-function openNoteView(index){
-const note=items[index];
-document.getElementById("viewNoteTitle").value=note.title;
-document.getElementById("viewNoteText").value=note.text;
-document.getElementById("viewNoteImage").src=note.image||"";
-viewNoteModal.style.display="flex";
+// VIEW NOTE
+function openViewNote(index){
+    const note = notes[index];
+    document.getElementById("viewNoteTitle").innerText=note.title;
+    document.getElementById("viewNoteContent").innerText=note.content;
+    document.getElementById("viewNoteImage").src=note.image||"";
+    document.getElementById("viewNoteModal").style.display="flex";
 }
 
 // SAVE SCRIPT
 function saveScript(){
-if(!scriptTitle.value||!scriptText.value)return;
-items.push({type:"script",title:scriptTitle.value,template:scriptText.value,values:{}});
-localStorage.setItem("items",JSON.stringify(items));
-closeAll();render();
+    const title=document.getElementById("scriptTitleInput").value.trim();
+    const content=document.getElementById("scriptContentInput").value.trim();
+    if(!title || !content) return;
+    scripts.push({title,template:content,values:{}});
+    localStorage.setItem("scripts",JSON.stringify(scripts));
+    document.getElementById("scriptTitleInput").value="";
+    document.getElementById("scriptContentInput").value="";
+    closeAll();renderGrid();
 }
 
 // VIEW SCRIPT
-function openScriptView(index){
-activeScriptIndex=index;
-const script=items[index];
-const inputsDiv=document.getElementById("scriptInputs");
-const resultDiv=document.getElementById("scriptResult");
-inputsDiv.innerHTML="";
-let values=script.values||{};
-const matches=[...script.template.matchAll(/\b([1-9]|10)&/g)].map(m=>m[1]).filter((v,i,a)=>a.indexOf(v)===i);
-matches.forEach(n=>{
-const input=document.createElement("input");
-input.placeholder=`Value for ${n}&`;
-input.value=values[n]||"";
-input.oninput=()=>{
-values[n]=input.value;
-updateResult(script.template,values);
-};
-inputsDiv.appendChild(input);
-});
-updateResult(script.template,values);
-viewScriptModal.style.display="flex";
+function openViewScript(index){
+    activeScriptIndex=index;
+    const script=scripts[index];
+    const inputsDiv=document.getElementById("scriptInputs");
+    const resultDiv=document.getElementById("scriptResult");
+    inputsDiv.innerHTML="";
+    let values=script.values||{};
+    const matches=[...script.template.matchAll(/\b([1-9]|10)&/g)].map(m=>m[1]).filter((v,i,a)=>a.indexOf(v)===i);
+    matches.forEach(n=>{
+        const input=document.createElement("input");
+        input.placeholder=`Value for ${n}&`;
+        input.value=values[n]||"";
+        input.oninput=()=>{values[n]=input.value;updateScriptResult(script.template,values);}
+        inputsDiv.appendChild(input);
+    });
+    updateScriptResult(script.template,values);
+    document.getElementById("viewScriptModal").style.display="flex";
 }
 
-// UPDATE PREVIEW
-function updateResult(template,values){
-let output=template;
-Object.keys(values).forEach(k=>{output=output.replaceAll(`${k}&`,values[k]);});
-document.getElementById("scriptResult").innerText=output;
+// UPDATE SCRIPT RESULT
+function updateScriptResult(template,values){
+    let out=template;
+    Object.keys(values).forEach(k=>{out=out.replaceAll(`${k}&`,values[k]);});
+    document.getElementById("scriptResult").innerText=out;
 }
 
-// SAVE VALUES PERSISTENTLY
-function saveValues(){
-if(activeScriptIndex===null)return;
-const script=items[activeScriptIndex];
-const inputs=document.querySelectorAll("#scriptInputs input");
-const values={};
-inputs.forEach(input=>{
-const key=input.placeholder.match(/\d+/)[0];
-values[key]=input.value;
-});
-script.values=values;
-localStorage.setItem("items",JSON.stringify(items));
-alert("Values saved! ✅ They will auto-fill next time.");
+// SAVE SCRIPT VALUES
+function saveScriptValues(){
+    if(activeScriptIndex===null) return;
+    const script=scripts[activeScriptIndex];
+    const inputs=document.querySelectorAll("#scriptInputs input");
+    const values={};
+    inputs.forEach(input=>{const k=input.placeholder.match(/\d+/)[0];values[k]=input.value;});
+    script.values=values;
+    localStorage.setItem("scripts",JSON.stringify(scripts));
+    alert("Values saved!");
+}
+
+// CLOSE MODAL BY CLICK OUTSIDE
+window.onclick=e=>{
+    if(e.target.classList.contains("modal")) closeAll();
 }
 </script>
+
 </body>
 </html>
