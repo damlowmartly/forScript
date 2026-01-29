@@ -32,7 +32,7 @@ input[type=file]{padding:3px;}
 <button onclick="openScript()">CreateScript</button>
 </div>
 
-<!-- CREATE NOTE (with image) -->
+<!-- CREATE NOTE -->
 <div class="modal" id="noteModal">
 <div class="panel">
 <span class="close" onclick="closeAll()">✕</span>
@@ -44,6 +44,20 @@ input[type=file]{padding:3px;}
 </div>
 <div class="note-right">
 <img id="notePreview" src="" alt="" />
+</div>
+</div>
+</div>
+
+<!-- VIEW NOTE -->
+<div class="modal" id="viewNoteModal">
+<div class="panel">
+<span class="close" onclick="closeAll()">✕</span>
+<div class="note-left">
+<h2 id="viewNoteTitle"></h2>
+<textarea id="viewNoteText" rows="6" readonly></textarea>
+</div>
+<div class="note-right">
+<img id="viewNoteImage" src="" alt="" />
 </div>
 </div>
 </div>
@@ -138,10 +152,13 @@ noteTitle.value="";noteText.value="";fileInput.value="";
 }
 }
 
-// VIEW NOTE
+// VIEW NOTE (modal layout)
 function openNoteView(index){
 const note=items[index];
-alert(note.title+"\n\n"+note.text); // simple alert, can expand later
+document.getElementById("viewNoteTitle").value=note.title;
+document.getElementById("viewNoteText").value=note.text;
+document.getElementById("viewNoteImage").src=note.image||"";
+viewNoteModal.style.display="flex";
 }
 
 // SAVE SCRIPT
