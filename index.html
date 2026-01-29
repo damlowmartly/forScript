@@ -4,42 +4,223 @@
 <meta charset="UTF-8">
 <title>Notes & Scripts</title>
 <style>
-body {margin:0;font-family:Arial,sans-serif;background:#f4f4f4;padding-bottom:80px;}
-.grid {display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:15px;padding:20px;}
-.note, .script {background:white;border-radius:10px;padding:15px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;text-align:center;min-height:120px;font-weight:bold;transition: transform 0.2s;position:relative;}
-.note:hover, .script:hover {transform:scale(1.03);}
-.delete-btn{position:absolute;top:6px;right:8px;background:#ff4d4d;color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:14px;cursor:pointer;line-height:20px;}
-.create-btn {position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:15px 30px;font-size:16px;border:none;border-radius:30px;background:#333;color:white;cursor:pointer;}
-.modal {position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:10;}
-.modal-content {background:white;padding:20px;border-radius:10px;width:90%;display:flex;flex-direction:column;gap:10px;}
-input,textarea {padding:10px;font-size:14px;width:100%;}
-.save-btn {background:#333;color:white;border:none;padding:10px;cursor:pointer;border-radius:5px;}
-.close-btn {position:absolute;top:15px;right:15px;background:rgba(0,0,0,0.6);color:white;border:none;padding:8px 12px;cursor:pointer;border-radius:20px;z-index:20;}
-.view-panel {background:white;width:90%;max-width:1000px;height:80vh;border-radius:12px;overflow:hidden;display:grid;grid-template-columns:1fr 1.4fr;}
-.view-notes {padding:25px;overflow-y:auto;}
-.view-title {font-size:22px;font-weight:bold;margin-bottom:15px;}
-.notes-text {white-space:pre-wrap;line-height:1.6;}
-.view-image {background:#000;}
-.view-image img {width:100%;height:100%;background-size:cover;}
-.script-panel {background:white;width:90%;max-width:600px;height:80vh;border-radius:12px;padding:20px;display:flex;flex-direction:column;}
-.script-inputs input{margin-bottom:6px;width:100%;}
-.result{background:#f1f1f1;padding:15px;border-radius:8px;white-space:pre-wrap;margin-top:10px;flex:1;}
+body {
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f4f4f4;
+    padding-bottom:80px;
+}
+
+.grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+    gap:15px;
+    padding:20px;
+}
+
+.note, .script {
+    background:white;
+    border-radius:10px;
+    padding:15px;
+    cursor:pointer;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    min-height:120px;
+    font-weight:bold;
+    transition: transform 0.2s;
+    position:relative;
+}
+
+.note:hover, .script:hover {
+    transform:scale(1.03);
+}
+
+.delete-btn {
+    position:absolute;
+    top:6px;
+    right:8px;
+    background:#ff4d4d;
+    color:white;
+    border:none;
+    border-radius:50%;
+    width:22px;
+    height:22px;
+    font-size:14px;
+    cursor:pointer;
+    line-height:20px;
+}
+
+.create-btn {
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    padding:15px 30px;
+    font-size:16px;
+    border:none;
+    border-radius:30px;
+    background:#333;
+    color:white;
+    cursor:pointer;
+}
+
+.modal {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:10;
+}
+
+.modal-content {
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    width:90%;
+    height:90vh; /* 90% of screen height */
+    display:flex;
+    gap:10px;
+}
+
+/* LEFT PANEL FOR INPUTS */
+.modal-left {
+    width:20%; /* 20% for note input */
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.modal-left input, 
+.modal-left textarea {
+    padding:15px;
+    font-size:16px; /* larger input size */
+    width:100%;
+    height:100px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    resize:none;
+}
+
+/* RIGHT PANEL FOR IMAGE */
+.modal-right {
+    width:80%; /* 80% for image preview */
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#f0f0f0;
+    border-radius:8px;
+}
+
+.modal-right img {
+    max-width:100%;
+    max-height:100%;
+    object-fit:cover;
+    border-radius:8px;
+}
+
+/* VIEW NOTE PANEL */
+.view-panel {
+    background:white;
+    width:90%;
+    max-width:1000px;
+    height:80vh;
+    border-radius:12px;
+    overflow:hidden;
+    display:grid;
+    grid-template-columns:20% 80%;
+}
+
+.view-notes {
+    padding:25px;
+    overflow-y:auto;
+}
+
+.view-title {
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:15px;
+}
+
+.notes-text {
+    white-space:pre-wrap;
+    line-height:1.6;
+}
+
+.view-image {
+    background:#000;
+}
+
+.view-image img {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.script-panel {
+    background:white;
+    width:90%;
+    max-width:600px;
+    height:80vh;
+    border-radius:12px;
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+}
+
+.script-inputs input {
+    margin-bottom:6px;
+    width:100%;
+    padding:12px;
+    font-size:16px;
+}
+
+.result {
+    background:#f1f1f1;
+    padding:15px;
+    border-radius:8px;
+    white-space:pre-wrap;
+    margin-top:10px;
+    flex:1;
+}
+
+.close-btn {
+    position:absolute;
+    top:15px;
+    right:15px;
+    background:rgba(0,0,0,0.6);
+    color:white;
+    border:none;
+    padding:8px 12px;
+    cursor:pointer;
+    border-radius:20px;
+    z-index:20;
+}
 </style>
 </head>
 <body>
 
 <div class="grid" id="grid"></div>
 
-<button class="create-btn" onclick="openCreateNote()">Create</button>
-<button class="create-btn" style="left:65%" onclick="openCreateScript()">CreateScript</button>
+<button class="create-btn" onclick="openCreateNote()">Create Note</button>
+<button class="create-btn" style="left:65%" onclick="openCreateScript()">Create Script</button>
 
 <!-- Create Note Modal -->
 <div class="modal" id="createNoteModal">
     <div class="modal-content">
-        <input type="text" id="noteTitleInput" placeholder="Title">
-        <textarea id="noteContentInput" rows="5" placeholder="Notes"></textarea>
-        <input type="file" id="noteImageInput" accept="image/*">
-        <button class="save-btn" onclick="saveNote()">Save</button>
+        <div class="modal-left">
+            <input type="text" id="noteTitleInput" placeholder="Title">
+            <textarea id="noteContentInput" placeholder="Notes"></textarea>
+            <input type="file" id="noteImageInput" accept="image/*">
+            <button class="save-btn" onclick="saveNote()">Save</button>
+        </div>
+        <div class="modal-right">
+            <img id="notePreview">
+        </div>
     </div>
 </div>
 
@@ -59,7 +240,7 @@ input,textarea {padding:10px;font-size:14px;width:100%;}
 
 <!-- Create Script Modal -->
 <div class="modal" id="createScriptModal">
-    <div class="modal-content">
+    <div class="modal-content" style="flex-direction:column;">
         <input type="text" id="scriptTitleInput" placeholder="Script title">
         <textarea id="scriptContentInput" rows="6" placeholder="Use placeholders like 1& 2&"></textarea>
         <button class="save-btn" onclick="saveScript()">Save Script</button>
@@ -127,7 +308,9 @@ function saveNote(){
 
     if(imageInput.files[0]){
         const reader=new FileReader();
-        reader.onload=()=>{pushNote(reader.result);}
+        reader.onload=()=>{
+            pushNote(reader.result);
+        }
         reader.readAsDataURL(imageInput.files[0]);
     }else pushNote(null);
 
@@ -137,9 +320,22 @@ function saveNote(){
         document.getElementById("noteTitleInput").value="";
         document.getElementById("noteContentInput").value="";
         document.getElementById("noteImageInput").value="";
+        document.getElementById("notePreview").src="";
         closeAll(); renderGrid();
     }
 }
+
+// IMAGE PREVIEW IN CREATE NOTE MODAL
+document.getElementById("noteImageInput").addEventListener("change", function(){
+    const file = this.files[0];
+    if(file){
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById("notePreview").src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+});
 
 // VIEW NOTE
 function openViewNote(index){
